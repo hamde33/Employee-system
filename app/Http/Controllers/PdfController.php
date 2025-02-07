@@ -10,21 +10,17 @@ class PdfController extends Controller
 {
     public function generateLeaveRequestsPdf()
     {
-        // جلب بيانات الطلبات من قاعدة البيانات مع العلاقات المطلوبة (الموظف ونوع الإجازة)
-        $leaveRequests = LeaveRequest::with(['employee', 'leaveType'])->get();
 
-        // تحميل العرض وتمرير البيانات إليه
-     
-$pdf = PDF::setOptions([
-    'isHtml5ParserEnabled' => true,
-    'isRemoteEnabled'      => true,
-    'defaultFont'          => 'DejaVu Sans'
-])->loadView('pdf.leave_requests', compact('leaveRequests'));
+        $leaveRequests = LeaveRequest::all();
 
-        // عرض ملف الـ PDF في المتصفح
-        return $pdf->stream('leave_requests.pdf');
+    $pdf = Pdf::loadView('pdf.leave_requests', compact('leaveRequests'))
+              ->setPaper('a4')
+              ->setOption('isHtml5ParserEnabled', true)
+              ->setOption('isFontSubsettingEnabled', true);
 
-        // أو يمكنك تحميل الملف مباشرة:
-        // return $pdf->download('leave_requests.pdf');
+    return $pdf->stream('leave_requests.pdf');
+
+        // جلب البيانات من قاعدة البيانات
+      
     }
 }

@@ -1,11 +1,11 @@
-@extends('layouts.app')
+@extends('layouts.app2')
 
 @section('content')
 <div class="container py-5">
     <!-- عنوان عام للصفحة -->
     <div class="text-center mb-4">
-        <h1 class="display-4">لوحة التحكم</h1>
-        <p class="lead">مرحبًا بك! يمكنك إدارة النظام من خلال هذه الواجهة.</p>
+        <h1 class="display-4">{{ __('messages.login') }}</h1>
+        <p class="lead">{{ __('messages.welcome_message') }}</p>
     </div>
 
     @if (session('status'))
@@ -17,40 +17,39 @@
     <!-- بطاقة توضح حالة تسجيل الدخول -->
     <div class="card mb-5 shadow-sm">
         <div class="card-header bg-primary text-white">
-            <h5 class="card-title mb-0">حالة الحساب</h5>
+            <h5 class="card-title mb-0">{{ __('messages.account_status') }}</h5>
         </div>
         <div class="card-body">
-            {{ __('You are logged in!') }}
+            {{ __('messages.logged_in') }}
         </div>
     </div>
 
     <div class="row">
-    @if(Auth::check() && Auth::user()->role === 'admin')
-
-        <div class="col-md-6 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">إدارة الموظفين</h5>
-                    <p class="card-text">
-                        إضافة وتحرير وحذف بيانات الموظفين. يمكنك متابعة بيانات التواصل والملاحظات الخاصة بكل موظف.
-                    </p>
-                    <a href="{{ route('employees.index') }}" class="btn btn-primary">
-                        عرض الموظفين
-                    </a>
+        @if(Auth::check() && Auth::user()->role === 'admin')
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ __('messages.manage_employees') }}</h5>
+                        <p class="card-text">
+                            {{ __('messages.manage_employees_description') }}
+                        </p>
+                        <a href="{{ route('employees.index') }}" class="btn btn-primary">
+                            {{ __('messages.view_employees') }}
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
         @endif
 
         <div class="col-md-6 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">طلبات الإجازة</h5>
+                    <h5 class="card-title">{{ __('messages.leave_requests') }}</h5>
                     <p class="card-text">
-                        مراجعة الطلبات الجديدة وقبولها أو رفضها، وعرض تفاصيل الإجازة للموظفين.
+                        {{ __('messages.leave_requests_description') }}
                     </p>
                     <a href="{{ route('leave-requests.index') }}" class="btn btn-primary">
-                        عرض الطلبات
+                        {{ __('messages.view_requests') }}
                     </a>
                 </div>
             </div>

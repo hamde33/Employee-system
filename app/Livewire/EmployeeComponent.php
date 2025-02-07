@@ -33,7 +33,11 @@ class EmployeeComponent extends Component
             abort(403, 'ليس لديك صلاحية للوصول إلى هذه الصفحة!');
         }
         $employees = Employee::orderBy('id', 'desc')->get();
-        return view('livewire.employee-component', compact('employees'));
+        
+        return view('livewire.employee-component', [
+            'employees' => $employees,
+       
+        ])->layout('layouts.app');
     }
 
     // دالة الحفظ (إنشاء موظف جديد)

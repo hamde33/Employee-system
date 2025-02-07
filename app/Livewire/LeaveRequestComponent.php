@@ -6,7 +6,7 @@ use Livewire\Component;
 use App\Models\LeaveRequest;
 use App\Models\Employee;
 use App\Models\LeaveType;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class LeaveRequestComponent extends Component
 {
@@ -33,35 +33,62 @@ class LeaveRequestComponent extends Component
 
     public function render()
     {
-        if (auth()->user()->role !== 'admin') {
-            $leaveTypes  = LeaveType::all();
 
+        // 1) جلب طلبات الإجازة حسب دور المستخدم
+        if (Auth::user()->role === 'admin') {
+            // الإداري يرى كل الطلبات
+            $leaveRequests = LeaveRequest::with('employee','leaveType')
+                ->orderBy('id', 'desc')
+                ->get();
+        } else {
+            // الموظف العادي: نعثر على سجله في جدول employees ثم نعرض طلباته
+            $employee = Employee::where('user_id', Auth::id())->first();
+            if (!$employee) {
+                // إذا لم يعثر على سجل موظف لهذا المستخدم
+                // يمكنك إمّا إظهار رسالة أو منع الوصول:
+                abort(403, 'لم يتم العثور على سجل الموظف لهذا المستخدم.');
+            }
+
+            $leaveRequests = LeaveRequest::with('employee','leaveType')
+                ->where('employee_id', $employee->id)
+                ->orderBy('id', 'desc')
+                ->get();
         }
-        else {
-            $leaveTypes  = LeaveType::where('employee_number', auth()->user()->id)->get();
-        }
-        $leaveRequests = LeaveRequest::with('employee','leaveType')
-            ->orderBy('id', 'desc')
-            ->get();
-        $employees   = Employee::all();
-        
-         return view('livewire.leave-request-component', [
+
+        // 2) جلب أنواع الإجازات وقائمة الموظفين (إن احتجتها)
+        //    في الغالب الإداري فقط من يحتاج employees لإضافة طلب بالنيابة
+        $leaveTypes = LeaveType::all();
+        $employees  = Employee::all();
+
+        return view('livewire.leave-request-component', [
             'leaveRequests' => $leaveRequests,
             'employees'     => $employees,
             'leaveTypes'    => $leaveTypes,
-        ])->layout('layouts.app'); // <-- دمج layout هنا
+        ])->layout('layouts.app');
     }
+
+
     public function store()
     {
-        // إذا المستخدم ليس إداريًا، نجعل employee_id = Auth::id()
-        if (auth()->check() && auth()->user()->role !== 'admin') {
-            $this->employee_id = auth()->id();
+        if (auth()->user()->role !== 'admin') {
+            $employee = Employee::where('user_id', auth()->id())->first();
+            $this->employee_id = $employee->id;
         }
-    
+        
+
+        // إذا المستخدم موظف عادي، نجلب employee_id من سجل الموظف المرتبط بـ user_id
+        if (Auth::check() && Auth::user()->role !== 'admin') {
+            $employee = Employee::where('user_id', Auth::id())->first();
+            if (!$employee) {
+                abort(403, 'لم يتم العثور على سجل الموظف لهذا المستخدم.');
+            }
+            $this->employee_id = $employee->id;
+        }
+        
         // التحقق من المدخلات
         $this->validate();
-    
-        // منع التداخل - اختياري
+
+        // منع التداخل (اختياري)
         $overlapExists = LeaveRequest::where('employee_id', $this->employee_id)
             ->where(function($query) {
                 $query->whereBetween('from_date', [$this->from_date, $this->to_date])
@@ -72,12 +99,11 @@ class LeaveRequestComponent extends Component
                       });
             })
             ->exists();
-    
         if ($overlapExists) {
             session()->flash('error', 'هناك إجازة متداخلة لهذا الموظف.');
             return;
         }
-    
+
         // إنشاء طلب الإجازة
         LeaveRequest::create([
             'employee_id'   => $this->employee_id,
@@ -88,17 +114,14 @@ class LeaveRequestComponent extends Component
             'notes'         => $this->notes,
             'status'        => $this->status,
         ]);
-    
-        // إعادة ضبط المدخلات
+
         $this->resetInputs();
-    
-        // رسالة نجاح
         session()->flash('message', 'تم إضافة طلب الإجازة بنجاح!');
+        return back();
     }
-    
+
     public function edit($id)
     {
-        
         $leaveRequest = LeaveRequest::findOrFail($id);
 
         $this->leave_request_id = $leaveRequest->id;
@@ -115,10 +138,14 @@ class LeaveRequestComponent extends Component
 
     public function update()
     {
-        if (auth()->check() && auth()->user()->role !== 'admin') {
-            $this->employee_id = auth()->id();
+        if (Auth::check() && Auth::user()->role !== 'admin') {
+            $employee = Employee::where('user_id', Auth::id())->first();
+            if (!$employee) {
+                abort(403, 'لم يتم العثور على سجل الموظف لهذا المستخدم.');
+            }
+            $this->employee_id = $employee->id;
         }
-    
+
         $this->validate();
 
         $leaveRequest = LeaveRequest::findOrFail($this->leave_request_id);
@@ -136,6 +163,8 @@ class LeaveRequestComponent extends Component
         $this->updateMode = false;
 
         session()->flash('message', 'تم تعديل طلب الإجازة بنجاح!');
+        return back();
+
     }
 
     public function delete($id)

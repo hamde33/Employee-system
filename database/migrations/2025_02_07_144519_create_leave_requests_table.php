@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('leave_requests', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->unsignedBigInteger('employee_id')->index('leave_requests_employee_id_foreign');
+            $table->unsignedBigInteger('employee_id');
             $table->unsignedBigInteger('leave_type_id')->index('leave_requests_leave_type_id_foreign');
             $table->text('reason')->nullable();
             $table->date('from_date');

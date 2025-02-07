@@ -13,6 +13,7 @@ class Employee extends Model
         'employee_number',
         'mobile_number',
         'address',
+        'user_id',
         'notes',
     ];
     

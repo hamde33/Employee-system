@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash; // لاستخدام الهاش لكلمة المرور
 use Illuminate\Validation\Rule;
+use Livewire\Component;
 
 class UserController extends Controller
 {
@@ -17,41 +18,69 @@ class UserController extends Controller
         }
         // جلب جميع المستخدمين بشكل مرتب
         $users = User::orderBy('id', 'desc')->paginate(10);
-        return view('users.index', compact('users'));
+        return view('users.index', [
+            'users' => $users,
+       
+        ]);
     }
-
+ 
     // 2) صفحة إضافة مستخدم جديد
     public function create()
     {
-        return view('users.create');
+        return view('users.create')->layout('layouts.app');
     }
 
     // 3) حفظ المستخدم الجديد في قاعدة البيانات
     public function store(Request $request)
     {
         // التحقق من البيانات
+        // نجمع قواعد المستخدم + الموظف
         $request->validate([
-            'name' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
-            'role' => 'nullable|string'
+            'email'           => 'required|email|unique:users,email',
+            'password'        => 'required|min:6',
+            'role'            => 'nullable|string',
+            
+            // حقول الموظف
+            'employee_name'   => 'required|string|max:100',
+            'employee_number' => 'required|string|unique:employees,employee_number',
+            'mobile_number'   => 'nullable|string|max:20',
+            'address'         => 'nullable|string',
+            'notes'           => 'nullable|string',
         ]);
-
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password), // تشفير كلمة المرور
-            'role' => $request->role ?? 'employee' // مثال
+    
+        // 1) إنشـاء المستخدم
+        $user = User::create([
+            'email'    => $request->email,
+            'name'   => $request->employee_name,
+            'password' => Hash::make($request->password),
+            'role'     => $request->role ?? 'employee',
+            // إذا أردت حفظ الاسم في user أيضاً، يمكنك إضافة حقل name في النموذج.
         ]);
-
+    
+        // 2) إنشـاء الموظف
+        // إذا لديك حقل user_id في employees املأه كي يرتبط الموظف بهذا المستخدم
+        $employee = \App\Models\Employee::create([
+            'user_id'         => $user->id,
+            'employee_name'   => $request->employee_name,
+            'employee_number' => $request->employee_number,
+            'mobile_number'   => $request->mobile_number,
+            'address'         => $request->address,
+            'notes'           => $request->notes,
+        ]);
+    
+        // عودة لقائمة المستخدمين
         return redirect()->route('users.index')
-                         ->with('success', 'تم إضافة المستخدم بنجاح!');
+                         ->with('success', 'تم إضافة المستخدم والموظف بنجاح!');
     }
+    
 
     // 4) عرض مستخدم واحد (غير ضروري غالبًا في لوحة التحكم)
     public function show(User $user)
     {
-        return view('users.show', compact('user'));
+        return view('users.show', [
+            'user' => $user,
+       
+        ])->layout('layouts.app');
     }
 
     // 5) صفحة تعديل بيانات المستخدم

@@ -10,12 +10,13 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        // التحقق: هل المستخدم مسجّل دخول؟ وهل دوره admin أو employee
+        // يجب أن يكون مسجّل الدخول وفي نفس الوقت admin
         if (Auth::check() && in_array(Auth::user()->role, ['admin', 'employee'])) {
             return $next($request);
         }
-    
+
+        // غير مسموح، أعرض صفحة 403 أو وجه رسالة خطأ
         abort(403, 'Unauthorized action.');
     }
-    
 }
+

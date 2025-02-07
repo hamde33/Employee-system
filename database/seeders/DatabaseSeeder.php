@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            leave_types::class,
+            // leave_types::class,
             users::class,
         ]);
     }

@@ -7,8 +7,15 @@ use App\Http\Controllers\UserController;
 use App\Livewire\LeaveRequestComponent;
 use App\Livewire\EmployeeComponent;
 use App\Http\Controllers\PdfController;
+use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\App;
 
 // 1) المصادقة
+
+Route::group(['prefix' => LaravelLocalization::setLocale()], function () {
+
+
 Auth::routes();
 
 // 2) عند دخول "/" نتوجه إلى "/login"
@@ -31,5 +38,12 @@ Route::middleware('auth')->group(function() {
         Route::get('/leave-requests', LeaveRequestComponent::class)->name('leave-requests.index');
         Route::resource('users', UserController::class);
     });
-
+});
+});
+Route::get('/lang/{locale}', function ($locale) {
+    if (in_array($locale, ['en', 'ar'])) {
+        session(['locale' => $locale]);
+        app()->setLocale($locale);
+    }
+    return redirect()->back();
 });
